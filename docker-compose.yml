@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .                # project root (contains srms/)
+      dockerfile: app/Dockerfile
+    container_name: srms_app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./srms:/var/www/html
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: root
+      DB_NAME: srms
+
+  db:
+    image: mysql:5.7
+    container_name: srms_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: srms
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./srms.sql:/docker-entrypoint-initdb.d/srms.sql:ro
+      # NOTE: the above path uses your uploaded SQL filename. If your SQL file name differs,
+      # change it to the correct filename (e.g. ./srms.sql).
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: srms_phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "9090:80"   # phpMyAdmin available on host:9090
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+
+volumes:
+  db_data:
