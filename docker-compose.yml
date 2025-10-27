@@ -7,11 +7,12 @@ services:
       dockerfile: app/Dockerfile
     container_name: srms_app
     ports:
-      - "8080:80"
+      - "80:80"                 # ✅ Expose on port 80 for browser access (no need for :8080)
     volumes:
       - ./srms:/var/www/html
     depends_on:
       - db
+    restart: always             # ✅ Auto-restart if container stops
     environment:
       DB_HOST: db
       DB_USER: root
@@ -28,8 +29,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./srms.sql:/docker-entrypoint-initdb.d/srms.sql:ro
-      # NOTE: the above path uses your uploaded SQL filename. If your SQL file name differs,
-      # change it to the correct filename (e.g. ./srms.sql).
+    healthcheck:                # ✅ Wait until DB is ready before starting the app
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
@@ -38,7 +42,7 @@ services:
     depends_on:
       - db
     ports:
-      - "9090:80"   # phpMyAdmin available on host:9090
+      - "9090:80"               # phpMyAdmin available on port 9090
     environment:
       PMA_HOST: db
       MYSQL_ROOT_PASSWORD: root
